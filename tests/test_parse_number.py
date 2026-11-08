@@ -58,6 +58,16 @@ def test_parse_number_edge_cases() -> None:
     assert repair_json("[1, 2notanumber]") == '[1, "2notanumber"]'
 
 
+def test_parse_number_double_comma_object() -> None:
+    # An empty item right after a number (two commas in a row) used to turn
+    # the number into the string "1," — the array and spaced variants repair
+    # cleanly, only the un-spaced object case corrupted the value.
+    assert repair_json('{"a": 1,, "b": 2}', return_objects=True) == {"a": 1, "b": 2}
+    assert repair_json('{"a": 1, , "b": 2}', return_objects=True) == {"a": 1, "b": 2}
+    assert repair_json('{"a": [1,,2]}', return_objects=True) == {"a": [1, 2]}
+    assert repair_json('{"key", 105,12,}', return_objects=True) == {"key": "105,12"}
+
+
 def test_numeric_prefix_identifiers_preserve_underscored_digits() -> None:
     assert repair_json('{"sku": 123_456ABC}', return_objects=True) == {"sku": "123_456ABC"}
     assert repair_json("[1_2_3ABC]", return_objects=True) == ["1_2_3ABC"]

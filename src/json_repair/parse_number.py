@@ -30,9 +30,17 @@ def parse_number(self: "JSONParser") -> JSONReturnType:
         self.index = number_start_index
         return self.parse_string()
     if number_str and number_str[-1] in "+-eE/,":
-        # The number ends with a non valid character for a number/currency, rolling back one
-        number_str = number_str[:-1]
-        self.index -= 1
+        # The number ends with a non valid character for a number/currency, rolling back
+        if number_str[-1] == ",":
+            # Roll back every trailing separator: with two commas in a row
+            # ("1,,") rolling back only one glues the rest into the value and
+            # the number silently becomes the string "1,"
+            while number_str[-1:] == ",":
+                number_str = number_str[:-1]
+                self.index -= 1
+        else:
+            number_str = number_str[:-1]
+            self.index -= 1
     try:
         if "," in number_str:
             return number_str
